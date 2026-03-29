@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NMG Service-Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f5f5f0;--bg2:#ffffff;--bg3:#eeeee8;--border:#e0ddd4;--text:#1a1a18;--text2:#6b6b65;--text3:#9b9b95;--blue:#1a6fc4;--green:#2e7d32;--amber:#b45309;--red:#c62828;--purple:#534AB7}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:14px;color:var(--text);background:var(--bg);direction:rtl;min-height:100vh}
+
+/* SETUP */
+#setup-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.setup-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;padding:36px;text-align:center;max-width:420px;width:92%;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.setup-logo{font-size:40px;margin-bottom:12px}
+.setup-title{font-size:22px;font-weight:600;margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.7}
+.setup-input{width:100%;padding:10px 14px;border:0.5px solid var(--border);border-radius:9px;font-size:13px;background:var(--bg2);color:var(--text);margin-bottom:12px;text-align:right}
+.setup-input:focus{outline:none;border-color:var(--blue)}
+.setup-btn{width:100%;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:9px;font-size:14px;cursor:pointer;font-weight:500;transition:opacity .2s}
+.setup-btn:hover{opacity:.88}
+.setup-note{font-size:11px;color:var(--text3);margin-top:14px;line-height:1.6}
+.setup-step{background:var(--bg3);border-radius:8px;padding:10px 14px;text-align:right;margin-bottom:10px;font-size:12px;color:var(--text2);line-height:1.8}
+.setup-step strong{color:var(--text);font-size:13px}
+
+/* APP */
+#app{display:none}
+.nav{background:var(--bg2);border-bottom:0.5px solid var(--border);padding:0 12px;display:flex;align-items:center;gap:1px;overflow-x:auto;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.nav-logo{font-weight:600;font-size:13px;padding:12px 10px 12px 12px;white-space:nowrap;border-left:0.5px solid var(--border);margin-left:4px;flex-shrink:0;color:var(--blue)}
+.nav-btn{padding:12px 10px;font-size:11px;border:none;background:none;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;white-space:nowrap;transition:color .2s;flex-shrink:0}
+.nav-btn:hover{color:var(--text)}
+.nav-btn.active{color:var(--text);border-bottom-color:var(--blue);font-weight:500}
+
+.sync-bar{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);padding:5px 14px;background:var(--bg3);border-bottom:0.5px solid var(--border)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.page{display:none;padding:14px;max-width:1200px;margin:0 auto}
+.page.active{display:block}
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.card-title{font-weight:500;font-size:13px;margin-bottom:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.stat-card{background:var(--bg3);border-radius:9px;padding:10px;text-align:center;border:0.5px solid var(--border)}
+.stat-num{font-size:22px;font-weight:600}.stat-lbl{font-size:10px;color:var(--text2);margin-top:2px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.dash-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.tbl th{text-align:right;padding:8px 10px;color:var(--text2);font-weight:400;border-bottom:0.5px solid var(--border);background:var(--bg3)}
+.tbl td{padding:8px 10px;border-bottom:0.5px solid var(--border);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg3)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.b-green{background:#e8f5e9;color:#2e7d32}.b-amber{background:#fff8e1;color:#b45309}.b-red{background:#ffebee;color:#c62828}.b-blue{background:#e3f2fd;color:#1a6fc4}.b-gray{background:#f1efe8;color:#6b6b65}.b-purple{background:#EEEDFE;color:#534AB7}
+.btn{padding:7px 14px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg2);cursor:pointer;font-size:12px;color:var(--text);transition:background .15s}
+.btn:hover{background:var(--bg3)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{opacity:.88}
+.btn-sm{padding:3px 9px;font-size:11px}
+.btn-danger{background:#ffebee;color:#c62828;border-color:#ef9a9a}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:11px;color:var(--text2)}
+.form-group input,.form-group select,.form-group textarea{padding:7px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--bg2);color:var(--text);width:100%}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue)}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-full{grid-column:1/-1}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-start;justify-content:center;padding-top:30px;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg2);border-radius:14px;padding:20px;width:94%;max-width:520px;border:0.5px solid var(--border);margin-bottom:30px;box-shadow:0 8px 32px rgba(0,0,0,.12)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:14px}
+.sec-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sec-title{font-size:15px;font-weight:500}
+.tab-bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tab-btn{padding:5px 12px;border-radius:20px;border:0.5px solid var(--border);background:transparent;cursor:pointer;font-size:11px;color:var(--text2)}
+.tab-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ppm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ppm-dot.due{background:var(--red)}.ppm-dot.soon{background:var(--amber)}.ppm-dot.ok{background:var(--green)}
+.dash-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:0.5px solid var(--border)}
+.dash-row:last-child{border-bottom:none}
+.dash-row-info{flex:1;min-width:0}
+.dash-row-title{font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-row-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.empty-dash{text-align:center;padding:20px;color:var(--text2);font-size:12px}
+.kpi-box{background:var(--bg3);border-radius:8px;padding:10px;text-align:center;border:0.5px solid var(--border)}
+.kpi-num{font-size:17px;font-weight:600;margin-bottom:2px}.kpi-lbl{font-size:10px;color:var(--text2)}
+.inv-stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:12px}
+.inv-stat{background:var(--bg3);border-radius:7px;padding:7px;text-align:center;cursor:pointer;border:0.5px solid var(--border)}
+.inv-stat.active-filter{border:2px solid var(--blue)}
+.bar-wrap{height:7px;background:var(--bg3);border-radius:3px;overflow:visible;position:relative;min-width:60px}
+.bar-fill{height:100%;border-radius:3px}
+.bar-min-m{position:absolute;top:-3px;height:13px;width:2px;border-radius:1px;background:var(--amber)}
+.bar-max-m{position:absolute;top:-3px;height:13px;width:2px;border-radius:1px;background:var(--blue);opacity:.5}
+.status-sel{padding:3px 7px;border:0.5px solid var(--border);border-radius:20px;font-size:10px;cursor:pointer;background:var(--bg2);color:var(--text);min-width:90px;text-align:center}
+.contract-card{border:0.5px solid var(--border);border-radius:10px;padding:13px;margin-bottom:10px}
+.info-row{display:flex;gap:5px;font-size:11px;color:var(--text2);margin-bottom:3px;align-items:center;flex-wrap:wrap}
+.info-val{color:var(--text);font-size:11px}
+.con-card{border-radius:10px;padding:13px;margin-bottom:10px;border:0.5px solid var(--border)}
+.con-card.profit{border-right:4px solid var(--green)}.con-card.loss{border-right:4px solid var(--red)}.con-card.brk{border-right:4px solid var(--amber)}
+.prog-wrap{height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;margin:5px 0 3px}
+.prog-bar{height:100%;border-radius:4px}
+.verdict{display:flex;align-items:center;gap:6px;margin-top:9px;padding:8px 12px;border-radius:8px;font-size:11px;font-weight:500}
+.v-profit{background:#e8f5e9;color:#2e7d32}.v-loss{background:#ffebee;color:#c62828}.v-brk{background:#fff8e1;color:#b45309}
+.upload-zone{border:1.5px dashed var(--border);border-radius:11px;padding:28px;text-align:center;cursor:pointer;transition:background .2s;margin-bottom:12px}
+.upload-zone:hover{background:var(--bg3)}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:10px;border:0.5px solid}
+.alert-info{background:#e3f2fd;color:#1a6fc4;border-color:#90caf9}
+.alert-success{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+.alert-amber{background:#fff8e1;color:#b45309;border-color:#ffe082}
+.hint-box{margin-top:8px;font-size:11px;color:var(--text2);background:var(--bg3);border-radius:7px;padding:7px 11px;display:none}
+.con-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:11px}
+.con-row:last-child{border-bottom:none}
+.order-card{border:0.5px solid var(--border);border-radius:9px;padding:12px;margin-bottom:9px;display:flex;align-items:center;gap:10px}
+.order-card.urgent{border-color:var(--red)}.order-card.warn{border-color:var(--amber)}
+.cond-section{display:none}.cond-section.show{display:block}
+.hidden{display:none}
+.parts-list-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border)}
+.parts-list-row:last-child{border-bottom:none}
+@media(max-width:640px){.stats-grid{grid-template-columns:repeat(3,1fr)}.dash-grid,.dash-grid-3{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.inv-stats-grid{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">⚙</div>
+    <div class="setup-title">NMG Service-Pro</div>
+    <div class="setup-sub">نظام إدارة الصيانة والأجهزة الطبية<br>أدخل رابط Google Apps Script للبدء</div>
+
+    <div class="setup-step">
+      <strong>كيف تحصل على الرابط؟</strong><br>
+      1. افتح Google Sheet ← Extensions ← Apps Script<br>
+      2. الصق كود Code.gs واضغط Save<br>
+      3. اضغط Deploy ← New deployment ← Web app<br>
+      4. Execute as: <strong>Me</strong> — Who has access: <strong>Anyone</strong><br>
+      5. انسخ الرابط والصقه هنا
+    </div>
+
+    <input class="setup-input" id="api-url-input" placeholder="https://script.google.com/macros/s/.../exec" type="url">
+    <button class="setup-btn" onclick="connectAPI()">اتصال وبدء التطبيق</button>
+    <div class="setup-note">البيانات تُحفظ مباشرة في Google Sheets الخاص بك</div>
+  </div>
+</div>
+
+<!-- SYNC BAR -->
+<div class="sync-bar" id="sync-bar" style="display:none">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-msg">متصل بـ Google Sheets</span>
+  <span style="margin-right:auto;font-size:11px" id="sync-time"></span>
+  <button class="btn btn-sm" onclick="showSetup()" style="font-size:10px">تغيير الرابط</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="nav">
+  <span class="nav-logo">⚙ NMG Service-Pro</span>
+  <button class="nav-btn active" onclick="showPage('dashboard',this)">لوحة التحكم</button>
+  <button class="nav-btn" onclick="showPage('installations',this)">التركيبات الجديدة</button>
+  <button class="nav-btn" onclick="showPage('ppm',this)">الزيارات الوقائية</button>
+  <button class="nav-btn" onclick="showPage('requests',this)">طلبات الصيانة</button>
+  <button class="nav-btn" onclick="showPage('contracts',this)">عقود الصيانة</button>
+  <button class="nav-btn" onclick="showPage('parts',this)">قطع الغيار</button>
+</div>
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" style="color:var(--blue)" id="s-dev">0</div><div class="stat-lbl">أجهزة</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--purple)" id="s-con">0</div><div class="stat-lbl">عقود</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--red)" id="s-ppm">0</div><div class="stat-lbl">PPM متأخرة</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="s-req">0</div><div class="stat-lbl">طلبات مفتوحة</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--red)" id="s-pl">0</div><div class="stat-lbl">قطع منخفضة</div></div>
+  </div>
+  <div class="dash-grid-3">
+    <div class="card" style="margin-bottom:0"><div class="card-title">مبيعات قطع الغيار</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="parts-sales-kpi"></div></div>
+    <div class="card" style="margin-bottom:0"><div class="card-title">قطع الغيار — ضمان البيع</div><div id="warranty-parts-kpi"></div></div>
+    <div class="card" style="margin-bottom:0"><div class="card-title">الزيارات — آخر 6 أشهر</div><div id="visits-chart"></div></div>
+  </div>
+  <div style="margin-bottom:12px"></div>
+  <div class="card">
+    <div class="card-title">ربحية عقود الصيانة</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px" id="contract-prof-kpi"></div>
+    <div id="contract-prof-list"></div>
+  </div>
+  <div class="dash-grid">
+    <div class="card"><div class="card-title">أقرب الزيارات الوقائية</div><div id="dash-ppm"></div></div>
+    <div class="card"><div class="card-title">عقود تنتهي قريباً</div><div id="dash-contracts-exp"></div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="card"><div class="card-title">طلبات قطع الغيار المعلقة</div><div id="dash-part-reqs"></div></div>
+    <div class="card"><div class="card-title">قطع الغيار المنخفضة</div><div id="dash-low-parts"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">آخر طلبات الصيانة</div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th style="width:80px">رقم</th><th>الجهاز</th><th>الوصف</th><th style="width:80px">الأولوية</th><th style="width:90px">الحالة</th></tr></thead><tbody id="dash-req"></tbody></table></div>
+  </div>
+</div>
+
+<!-- INSTALLATIONS -->
+<div id="page-installations" class="page">
+  <div class="sec-header"><span class="sec-title">التركيبات الجديدة</span><button class="btn btn-primary" onclick="openModal('m-install')">+ جهاز جديد</button></div>
+  <div id="install-alert" style="display:none"></div>
+  <div style="overflow-x:auto"><div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl"><thead><tr><th>الجهاز</th><th>العميل</th><th>تاريخ التركيب</th><th>دورة PPM</th><th>الفني</th><th style="width:100px">حالة PPM</th><th style="width:55px"></th></tr></thead><tbody id="dev-table"></tbody></table>
+  </div></div>
+</div>
+
+<!-- PPM -->
+<div id="page-ppm" class="page">
+  <div class="sec-header">
+    <span class="sec-title">الزيارات الوقائية</span>
+    <select id="ppm-filter" onchange="renderPPM()" style="padding:6px 10px;border:0.5px solid var(--border);border-radius:8px;font-size:12px;background:var(--bg2);color:var(--text)">
+      <option value="all">الكل</option><option value="due">متأخرة</option><option value="soon">قريباً</option><option value="ok">منتظمة</option>
+    </select>
+  </div>
+  <div style="overflow-x:auto"><div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl"><thead><tr><th>الجهاز</th><th>العميل</th><th>العقد</th><th>آخر زيارة</th><th>الزيارة القادمة</th><th style="width:100px">الحالة</th><th style="width:90px"></th></tr></thead><tbody id="ppm-table"></tbody></table>
+  </div></div>
+</div>
+
+<!-- REQUESTS -->
+<div id="page-requests" class="page">
+  <div class="sec-header"><span class="sec-title">طلبات الصيانة</span><button class="btn btn-primary" onclick="openModal('m-req')">+ طلب جديد</button></div>
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="setRF('all',this)">الكل</button>
+    <button class="tab-btn" onclick="setRF('open',this)">مفتوح</button>
+    <button class="tab-btn" onclick="setRF('inprogress',this)">قيد التنفيذ</button>
+    <button class="tab-btn" onclick="setRF('done',this)">مكتمل</button>
+  </div>
+  <div style="overflow-x:auto"><div class="card" style="padding:0;overflow:hidden">
+    <table class="tbl"><thead><tr><th style="width:80px">رقم</th><th>الجهاز</th><th>الوصف</th><th style="width:80px">الأولوية</th><th style="width:90px">الحالة</th><th style="width:50px"></th></tr></thead><tbody id="req-table"></tbody></table>
+  </div></div>
+</div>
+
+<!-- CONTRACTS -->
+<div id="page-contracts" class="page">
+  <div class="sec-header"><span class="sec-title">عقود الصيانة</span><button class="btn btn-primary" onclick="openModal('m-contract')">+ عقد جديد</button></div>
+  <div id="contracts-list"></div>
+</div>
+
+<!-- PARTS -->
+<div id="page-parts" class="page">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchInvTab('inventory',this)">المخزون</button>
+    <button class="tab-btn" onclick="switchInvTab('orders',this)">الطلبيات <span id="order-badge" style="background:var(--red);color:#fff;border-radius:20px;padding:1px 5px;font-size:9px;margin-right:3px"></span></button>
+    <button class="tab-btn" onclick="switchInvTab('update',this)">تحديث من Excel</button>
+    <button class="tab-btn" onclick="switchInvTab('consumption',this)">تقرير الاستهلاك</button>
+    <button class="tab-btn" onclick="switchInvTab('log',this)">سجل التحديثات</button>
+  </div>
+  <div id="inv-inventory" class="inv-section">
+    <div id="last-banner"></div>
+    <div class="inv-stats-grid" id="inv-stats"></div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:9px 12px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:7px">
+        <span style="font-weight:500;font-size:12px">قطع الغيار</span>
+        <div style="display:flex;gap:7px">
+          <input id="search-inv" placeholder="بحث..." oninput="renderInventory()" style="padding:4px 9px;border:0.5px solid var(--border);border-radius:7px;font-size:11px;background:var(--bg2);color:var(--text);width:120px">
+          <button class="btn btn-sm" onclick="openModal('m-part-req')">طلب قطعة</button>
+          <button class="btn btn-sm btn-primary" onclick="openAddPart()">+ إضافة</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>رقم القطعة</th><th>اسم القطعة</th><th>المورد</th><th style="text-align:center;width:50px">الكمية</th><th style="width:150px">Min / Max</th><th style="width:110px">الحالة</th><th style="width:45px"></th></tr></thead><tbody id="inv-table"></tbody></table></div>
+      <div style="padding:5px 12px;display:flex;gap:12px;font-size:10px;color:var(--text2)">
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:var(--amber);display:inline-block;border-radius:1px"></span>Min</span>
+        <span style="display:flex;align-items:center;gap:3px"><span style="width:8px;height:8px;background:var(--blue);opacity:.5;display:inline-block;border-radius:1px"></span>Max</span>
+      </div>
+    </div>
+  </div>
+  <div id="inv-orders" class="inv-section hidden">
+    <div class="alert alert-info">القطع التي وصلت أو تجاوزت الـ Min — الكمية المقترحة = Max − الكمية الحالية</div>
+    <div id="orders-list"></div>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="exportOrders()">تصدير قائمة الطلبيات</button></div>
+  </div>
+  <div id="inv-update" class="inv-section hidden">
+    <div class="alert alert-info">الأعمدة المطلوبة: <strong>رقم القطعة — اسم القطعة — الكمية — المورد</strong></div>
+    <div style="margin-top:10px"></div>
+    <div class="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.style.background='var(--bg3)'" ondragleave="this.style.background=''" ondrop="handleDrop(event)">
+      <div style="font-size:28px;margin-bottom:6px">📂</div>
+      <div style="font-size:13px;font-weight:500;margin-bottom:3px">اسحب ملف Excel أو اضغط للاختيار</div>
+      <div style="font-size:11px;color:var(--text2)">.xlsx / .xls</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" class="hidden" onchange="handleFile(this.files[0])">
+    <div id="col-mapping" class="hidden">
+      <div style="font-weight:500;font-size:12px;margin-bottom:8px">تعيين الأعمدة</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px" id="col-map-grid"></div>
+      <div id="preview-section" class="hidden">
+        <div style="overflow-x:auto;margin-bottom:10px" id="preview-table"></div>
+        <div id="import-summary" class="alert alert-amber hidden"></div>
+        <div style="display:flex;gap:7px;justify-content:flex-end"><button class="btn" onclick="resetUpload()">إلغاء</button><button class="btn btn-primary" onclick="confirmImport()">تأكيد</button></div>
+      </div>
+    </div>
+    <div id="import-success" class="hidden"><div class="alert alert-success" id="import-success-msg"></div><button class="btn btn-primary" onclick="resetUpload()">تحديث جديد</button></div>
+  </div>
+  <div id="inv-consumption" class="inv-section hidden">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px" id="con-summary"></div>
+    <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="cf-device" onchange="renderConsumption()" style="padding:5px 9px;border:0.5px solid var(--border);border-radius:7px;font-size:11px;background:var(--bg2);color:var(--text)"><option value="">كل الأجهزة</option></select>
+      <select id="cf-cov" onchange="renderConsumption()" style="padding:5px 9px;border:0.5px solid var(--border);border-radius:7px;font-size:11px;background:var(--bg2);color:var(--text)"><option value="">كل التغطيات</option><option value="warranty">ضمان البيع</option><option value="contract">ضمان عقد</option><option value="purchase">شراء مباشر</option></select>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden"><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>القطعة</th><th>الجهاز</th><th style="width:50px;text-align:center">الكمية</th><th>التغطية</th><th>التكلفة</th><th>التاريخ</th></tr></thead><tbody id="consumption-table"></tbody></table></div></div>
+  </div>
+  <div id="inv-log" class="inv-section hidden">
+    <div class="card" style="padding:0;overflow:hidden"><div id="update-log" style="padding:3px 0"></div></div>
+  </div>
+</div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="m-install"><div class="modal">
+  <div class="modal-title">تسجيل جهاز جديد</div>
+  <div class="form-grid">
+    <div class="form-group"><label>اسم الجهاز *</label><input id="d-name" placeholder="Belimed WD 200"></div>
+    <div class="form-group"><label>الموديل</label><input id="d-model"></div>
+    <div class="form-group"><label>الرقم التسلسلي</label><input id="d-serial"></div>
+    <div class="form-group"><label>العميل *</label><input id="d-client"></div>
+    <div class="form-group"><label>تاريخ التركيب *</label><input id="d-date" type="date"></div>
+    <div class="form-group"><label>دورة PPM</label><select id="d-cycle"><option value="6">نصف سنوي</option><option value="12">سنوي</option></select></div>
+    <div class="form-group"><label>الفني</label><input id="d-tech"></div>
+    <div class="form-group"><label>نوع الجهاز</label><select id="d-type"><option>معقّم بخاري</option><option>غسّالة معقِّمة</option><option>أثاث طبي</option><option>جهاز تشخيصي</option><option>أخرى</option></select></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-install')">إلغاء</button><button class="btn btn-primary" onclick="addDevice()">تسجيل + جدولة PPM</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-contract"><div class="modal">
+  <div class="modal-title">إضافة عقد صيانة</div>
+  <div class="form-grid">
+    <div class="form-group form-full"><label>العميل *</label><input id="c-client"></div>
+    <div class="form-group form-full"><label>نوع العقد *</label><select id="c-type"><option value="full">شامل (قطع الغيار + العمالة)</option><option value="labor">غير شامل (عمالة فقط)</option><option value="ppm-kit">زيارات وقائية مع PM Kit</option><option value="ppm-only">زيارات وقائية فقط</option></select></div>
+    <div class="form-group"><label>تاريخ البداية *</label><input id="c-start" type="date"></div>
+    <div class="form-group"><label>تاريخ الانتهاء *</label><input id="c-end" type="date"></div>
+    <div class="form-group"><label>دورة PPM</label><select id="c-cycle"><option value="6">نصف سنوي</option><option value="12">سنوي</option></select></div>
+    <div class="form-group"><label>قيمة العقد (ريال)</label><input id="c-value" type="number"></div>
+    <div class="form-group form-full"><label>الأجهزة المشمولة</label><select id="c-devices" multiple style="min-height:75px"></select></div>
+    <div class="form-group form-full"><label>ملاحظات</label><textarea id="c-notes"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-contract')">إلغاء</button><button class="btn btn-primary" onclick="addContract()">حفظ + تحديث PPM</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-ppm-done"><div class="modal">
+  <div class="modal-title">تسجيل زيارة وقائية</div>
+  <input type="hidden" id="ppm-dev-id">
+  <div class="form-grid">
+    <div class="form-group"><label>تاريخ الزيارة</label><input id="ppm-date" type="date"></div>
+    <div class="form-group"><label>الفني المنفذ</label><input id="ppm-tech"></div>
+    <div class="form-group"><label>نوع الزيارة</label><select id="ppm-type"><option value="ppm">زيارة وقائية PPM</option><option value="ppm-kit">وقائية + PM Kit</option><option value="corrective">تصحيحية</option><option value="emergency">طارئة</option></select></div>
+    <div class="form-group form-full"><label>ملاحظات</label><textarea id="ppm-notes"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-ppm-done')">إلغاء</button><button class="btn btn-primary" onclick="completePPM()">تأكيد وتحديث الجدول</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-req"><div class="modal">
+  <div class="modal-title">طلب صيانة جديد</div>
+  <div class="form-grid">
+    <div class="form-group form-full"><label>الجهاز *</label><select id="r-device"><option value="">-- اختر --</option></select></div>
+    <div class="form-group form-full"><label>وصف العطل *</label><textarea id="r-desc"></textarea></div>
+    <div class="form-group"><label>الأولوية</label><select id="r-priority"><option value="low">منخفضة</option><option value="medium" selected>متوسطة</option><option value="high">عالية</option><option value="critical">حرج</option></select></div>
+    <div class="form-group"><label>نوع الطلب</label><select id="r-type"><option>تصحيحية</option><option>وقائية</option><option>طارئة</option></select></div>
+    <div class="form-group"><label>المُبلِّغ</label><input id="r-reporter"></div>
+    <div class="form-group"><label>الفني المكلف</label><input id="r-assigned"></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-req')">إلغاء</button><button class="btn btn-primary" onclick="addRequest()">إنشاء الطلب</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-part-req"><div class="modal">
+  <div class="modal-title">طلب قطعة غيار</div>
+  <div class="form-grid">
+    <div class="form-group form-full"><label>القطعة *</label><select id="pr-part"><option value="">-- اختر --</option></select></div>
+    <div class="form-group form-full"><label>الجهاز *</label><select id="pr-device" onchange="updateWarrantyInfo()"><option value="">-- اختر --</option></select></div>
+    <div class="form-group"><label>الكمية</label><input id="pr-qty" type="number" value="1" min="1"></div>
+    <div class="form-group"><label>سبب الطلب</label><input id="pr-reason"></div>
+    <div class="form-group form-full"><label>نوع التغطية *</label><select id="pr-cov" onchange="updateCovFields()"><option value="">-- اختر --</option><option value="warranty">ضمان البيع</option><option value="contract">ضمان عقد صيانة</option><option value="purchase">شراء مباشر</option></select></div>
+    <div id="pr-warranty-info" class="form-group form-full cond-section"><div style="background:var(--bg3);border-radius:7px;padding:9px;font-size:11px"><div id="pr-w-content"></div></div></div>
+    <div id="pr-contract-info" class="form-group form-full cond-section"><div style="background:var(--bg3);border-radius:7px;padding:9px;font-size:11px"><div id="pr-c-content"></div></div></div>
+    <div id="pr-purchase-section" class="form-group form-full cond-section"><label>قيمة القطعة (ريال)</label><input id="pr-price" type="number"></div>
+    <div class="form-group form-full"><label>ملاحظات</label><textarea id="pr-notes"></textarea></div>
+  </div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-part-req')">إلغاء</button><button class="btn btn-primary" onclick="submitPartReq()">إرسال الطلب</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-edit-part"><div class="modal">
+  <div class="modal-title" id="m-edit-part-title">إضافة قطعة</div>
+  <input type="hidden" id="ep-id">
+  <div class="form-grid">
+    <div class="form-group"><label>رقم القطعة</label><input id="ep-num"></div>
+    <div class="form-group"><label>اسم القطعة *</label><input id="ep-name"></div>
+    <div class="form-group"><label>المورد</label><input id="ep-supplier"></div>
+    <div class="form-group"><label>سعر الوحدة (ريال)</label><input id="ep-price" type="number"></div>
+    <div class="form-group"><label>الكمية الحالية</label><input id="ep-qty" type="number" min="0" oninput="updatePartHint()"></div>
+    <div class="form-group"><label>Min *</label><input id="ep-min" type="number" min="0" oninput="updatePartHint()"></div>
+    <div class="form-group"><label>Max *</label><input id="ep-max" type="number" min="0" oninput="updatePartHint()"></div>
+    <div class="form-group"><label>متوافق مع</label><input id="ep-compat"></div>
+    <div class="form-group form-full"><label>الحالة</label><select id="ep-status"><option value="">تلقائي</option><option value="ordered">تم طلبها من المورد</option><option value="not_ordered">لم يتم طلبها بعد</option></select></div>
+  </div>
+  <div class="hint-box" id="part-hint"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" onclick="closeModal('m-edit-part')">إلغاء</button><button class="btn btn-primary" onclick="savePart()">حفظ</button></div>
+</div></div>
+
+<div class="modal-bg" id="m-req-detail"><div class="modal">
+  <div class="modal-title" id="rd-title">تفاصيل الطلب</div>
+  <div id="rd-body"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+    <button class="btn" onclick="closeModal('m-req-detail')">إغلاق</button>
+    <button class="btn" id="rd-inp" onclick="updReq('inprogress')">بدء التنفيذ</button>
+    <button class="btn btn-primary" id="rd-done" onclick="updReq('done')">إغلاق كمكتمل</button>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+var API_URL = localStorage.getItem('nmg_api_url') || '';
+var devices=[],contracts=[],requests=[],parts=[],partRequests=[],visitLog=[],updateLog=[];
+var reqFilter='all',activeReqId=null,invFilter='all',editPartId=null,parsedRows=[];
+var nextDevId=1,nextReqId=1,nextConId=1,nextPRId=1;
+
+// ===== API =====
+async function api(action, sheet, data){
+  if(!API_URL) return null;
+  setSyncStatus('syncing','جاري الحفظ...');
+  try{
+    const body={action:action,sheet:sheet};
+    if(data!==undefined) body.data=data;
+    const res = await fetch(API_URL, {method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'text/plain'}});
+    const json = await res.json();
+    setSyncStatus('ok','تم الحفظ في Google Sheets');
+    const t=new Date();
+    document.getElementById('sync-time').textContent=t.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});
+    return json;
+  } catch(e){
+    setSyncStatus('error','خطأ: '+e.message);
+    return null;
+  }
+}
+
+async function loadAll(){
+  setSyncStatus('syncing','جاري التحميل من Google Sheets...');
+  try{
+    const res = await fetch(API_URL+'?action=readAll');
+    const json = await res.json();
+    if(!json.success) throw new Error(json.error);
+    const d = json.data;
+    devices = (d.Devices||[]).map(parseDevice);
+    contracts = (d.Contracts||[]).map(parseContract);
+    requests = d.Requests||[];
+    parts = (d.Parts||[]).map(parsePart);
+    partRequests = (d.PartRequests||[]).map(parsePR);
+    visitLog = (d.VisitLog||[]).map(function(v){return{deviceId:parseInt(v.deviceId||0),type:v.type,date:v.date}});
+    updateLog = d.UpdateLog||[];
+    if(devices.length) nextDevId=Math.max.apply(null,devices.map(function(d){return d.id||0}))+1;
+    if(requests.length) nextReqId=Math.max.apply(null,requests.map(function(r){return parseInt((r.id||'0').replace('REQ-',''))||0}))+1;
+    if(contracts.length) nextConId=Math.max.apply(null,contracts.map(function(c){return c.id||0}))+1;
+    if(partRequests.length) nextPRId=Math.max.apply(null,partRequests.map(function(r){return parseInt((r.id||'0').replace('PR-',''))||0}))+1;
+    setSyncStatus('ok','متصل بـ Google Sheets');
+    return true;
+  } catch(e){
+    setSyncStatus('error','خطأ في التحميل: '+e.message);
+    return false;
+  }
+}
+
+function parseDevice(d){return{id:parseInt(d.id||0),name:d.name,model:d.model,serial:d.serial,client:d.client,date:d.date,cycle:parseInt(d.cycle||6),tech:d.tech,type:d.type,lastPPM:d.lastPPM,warrantyMonths:parseInt(d.warrantyMonths||12)}}
+function parseContract(c){var devIds=[];try{devIds=JSON.parse(c.deviceIds||'[]')}catch(e){}return{id:parseInt(c.id||0),client:c.client,type:c.type,start:c.start,end:c.end,cycle:parseInt(c.cycle||6),value:parseFloat(c.value||0),deviceIds:devIds,notes:c.notes}}
+function parsePart(p){return{id:parseInt(p.id||0),num:p.num,name:p.name,qty:parseInt(p.qty||0),min:parseInt(p.min||0),max:parseInt(p.max||0),supplier:p.supplier,price:parseFloat(p.price||0),compat:p.compat,manualStatus:p.manualStatus||''}}
+function parsePR(r){return{id:r.id,partId:parseInt(r.partId||0),deviceId:parseInt(r.deviceId||0),qty:parseInt(r.qty||0),coverage:r.coverage,price:parseFloat(r.price||0),reason:r.reason,notes:r.notes,date:r.date,status:r.status,contractId:r.contractId?parseInt(r.contractId):null}}
+
+function saveDevices(){api('write','Devices',devices.map(function(d){return Object.assign({},d)}))}
+function saveContracts(){api('write','Contracts',contracts.map(function(c){return Object.assign({},c,{deviceIds:JSON.stringify(c.deviceIds||[])})}))}
+function saveRequests(){api('write','Requests',requests)}
+function saveParts(){api('write','Parts',parts)}
+function savePartReqs(){api('write','PartRequests',partRequests)}
+function saveVisitLog(){api('write','VisitLog',visitLog)}
+function saveUpdateLog(){api('write','UpdateLog',updateLog)}
+
+function setSyncStatus(status,msg){
+  var dot=document.getElementById('sync-dot');
+  var msgEl=document.getElementById('sync-msg');
+  if(!dot||!msgEl)return;
+  dot.className='sync-dot'+(status==='syncing'?' syncing':status==='error'?' error':'');
+  msgEl.textContent=msg;
+}
+
+async function connectAPI(){
+  var url=document.getElementById('api-url-input').value.trim();
+  if(!url){alert('يرجى إدخال رابط Apps Script');return}
+  API_URL=url;
+  localStorage.setItem('nmg_api_url',url);
+  var btn=document.querySelector('.setup-btn');
+  btn.textContent='جاري الاتصال...';btn.disabled=true;
+  var ok=await loadAll();
+  if(ok){
+    document.getElementById('setup-screen').style.display='none';
+    document.getElementById('sync-bar').style.display='flex';
+    document.getElementById('app').style.display='block';
+    renderDashboard();
+  } else {
+    btn.textContent='اتصال وبدء التطبيق';btn.disabled=false;
+    alert('تعذر الاتصال. تأكد من الرابط وأن الـ deployment صحيح');
+  }
+}
+
+function showSetup(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('sync-bar').style.display='none';
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('api-url-input').value=API_URL;
+}
+
+// init
+if(API_URL){
+  document.getElementById('api-url-input').value=API_URL;
+  document.getElementById('setup-screen').style.display='flex';
+}
+
+// ===== HELPERS =====
+function today(){return new Date().toISOString().split('T')[0]}
+function addMonths(ds,m){var d=new Date(ds);d.setMonth(d.getMonth()+m);return d.toISOString().split('T')[0]}
+function daysDiff(ds){var n=new Date();n.setHours(0,0,0,0);return Math.round((new Date(ds)-n)/86400000)}
+function fmtDate(s){if(!s)return'—';return new Date(s).toLocaleDateString('ar-SA',{year:'numeric',month:'short',day:'numeric'})}
+function fmtMonth(d){return d.toLocaleDateString('ar-SA',{month:'short',year:'2-digit'})}
+function pBadge(p){var m={low:['b-gray','منخفضة'],medium:['b-blue','متوسطة'],high:['b-amber','عالية'],critical:['b-red','حرج']};return'<span class="badge '+m[p][0]+'">'+m[p][1]+'</span>'}
+function sBadge(s){var m={open:['b-amber','مفتوح'],inprogress:['b-blue','قيد التنفيذ'],done:['b-green','مكتمل']};return'<span class="badge '+m[s][0]+'">'+m[s][1]+'</span>'}
+function ctBadge(t){var m={'full':'b-green','labor':'b-blue','ppm-kit':'b-purple','ppm-only':'b-gray'};var l={'full':'شامل','labor':'غير شامل','ppm-kit':'PPM+Kit','ppm-only':'PPM فقط'};return'<span class="badge '+(m[t]||'b-gray')+'">'+(l[t]||t)+'</span>'}
+function ppmSt(dev){var next=addMonths(dev.lastPPM||dev.date,dev.cycle);var diff=daysDiff(next);if(diff<0)return{cls:'due',lbl:'متأخر '+Math.abs(diff)+' ي',bc:'b-red',next:next};if(diff<=45)return{cls:'soon',lbl:'بعد '+diff+' ي',bc:'b-amber',next:next};return{cls:'ok',lbl:'بعد '+diff+' ي',bc:'b-green',next:next}}
+function getPS(p){if(p.manualStatus==='ordered')return{key:'ordered',lbl:'تم طلبها',bc:'b-purple',color:'var(--purple)'};if(p.manualStatus==='not_ordered')return{key:'not_ordered',lbl:'لم تُطلب بعد',bc:'b-amber',color:'var(--amber)'};if(p.qty===0)return{key:'empty',lbl:'نفدت',bc:'b-red',color:'var(--red)'};if(p.qty<=p.min)return{key:'reorder',lbl:'اطلب الآن',bc:'b-amber',color:'var(--amber)'};if(p.qty>=(p.max||99))return{key:'full',lbl:'ممتلئ',bc:'b-blue',color:'var(--blue)'};return{key:'ok',lbl:'متوفر',bc:'b-green',color:'var(--green)'}}
+function orderQty(p){return Math.max(0,(p.max||0)-p.qty)}
+function warrantyEnd(dev){return addMonths(dev.date,dev.warrantyMonths||12)}
+function isUnderWarranty(dev){return today()<=warrantyEnd(dev)}
+function getDevCon(devId){return contracts.find(function(c){return c.deviceIds&&c.deviceIds.includes(devId)&&today()<=c.end})||null}
+
+// ===== NAV =====
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.nav-btn').forEach(function(b){b.classList.remove('active')});
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  var fns={dashboard:renderDashboard,installations:renderDevices,contracts:renderContracts,ppm:renderPPM,requests:renderRequests,parts:renderInventory};
+  if(fns[id])fns[id]();
+}
+function openModal(id){
+  if(id==='m-req')populateDevSel('r-device');
+  if(id==='m-contract')populateDevSel('c-devices',true);
+  if(id==='m-part-req'){populateDevSel('pr-device');populatePartSel();}
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.modal-bg').forEach(function(m){m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open')})});
+function populateDevSel(id,multi){var sel=document.getElementById(id);if(!multi)sel.innerHTML='<option value="">-- اختر --</option>';else sel.innerHTML='';devices.forEach(function(d){var o=document.createElement('option');o.value=d.id;o.textContent=d.name+' — '+d.client;sel.appendChild(o)})}
+function populatePartSel(){var sel=document.getElementById('pr-part');sel.innerHTML='<option value="">-- اختر --</option>';parts.forEach(function(p){var o=document.createElement('option');o.value=p.id;o.textContent=p.name+' ('+p.num+')';sel.appendChild(o)})}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  document.getElementById('s-dev').textContent=devices.length;
+  document.getElementById('s-con').textContent=contracts.length;
+  document.getElementById('s-ppm').textContent=devices.filter(function(d){return ppmSt(d).cls==='due'}).length;
+  document.getElementById('s-req').textContent=requests.filter(function(r){return r.status==='open'}).length;
+  document.getElementById('s-pl').textContent=parts.filter(function(p){var k=getPS(p).key;return k==='reorder'||k==='empty'||k==='not_ordered'}).length;
+  var dPRs=partRequests.filter(function(r){return r.status==='done'});
+  var tS=dPRs.reduce(function(s,r){return s+(r.price*r.qty||0)},0);
+  var pS=dPRs.filter(function(r){return r.coverage==='purchase'}).reduce(function(s,r){return s+(r.price*r.qty||0)},0);
+  var cS=dPRs.filter(function(r){return r.coverage==='contract'}).reduce(function(s,r){return s+(r.price*r.qty||0)},0);
+  var pendS=partRequests.filter(function(r){return r.status==='pending'}).reduce(function(s,r){var p=parts.find(function(x){return x.id===r.partId});return s+((p?p.price:0)*r.qty||0)},0);
+  document.getElementById('parts-sales-kpi').innerHTML='<div class="kpi-box"><div class="kpi-num" style="color:var(--green)">'+tS.toLocaleString()+'</div><div class="kpi-lbl">إجمالي المبيعات (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--blue)">'+pS.toLocaleString()+'</div><div class="kpi-lbl">شراء مباشر (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--purple)">'+cS.toLocaleString()+'</div><div class="kpi-lbl">تحت عقد (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--amber)">'+pendS.toLocaleString()+'</div><div class="kpi-lbl">طلبات معلقة (ريال)</div></div>';
+  var wPRs=partRequests.filter(function(r){return r.coverage==='warranty'});
+  var wC=wPRs.reduce(function(s,r){return s+(r.price*r.qty||0)},0),wQ=wPRs.reduce(function(s,r){return s+r.qty},0);
+  var wH='<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:9px"><div class="kpi-box"><div class="kpi-num" style="color:var(--red)">'+wC.toLocaleString()+'</div><div class="kpi-lbl">تكلفة إجمالية (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--amber)">'+wQ+'</div><div class="kpi-lbl">قطعة مستخدمة</div></div></div>';
+  wPRs.slice(0,3).forEach(function(r){var p=parts.find(function(x){return x.id===r.partId}),dev=devices.find(function(x){return x.id===r.deviceId});wH+='<div class="dash-row"><div class="dash-row-info"><div class="dash-row-title">'+(p?p.name:'—')+' ×'+r.qty+'</div><div class="dash-row-sub">'+(dev?dev.name:'—')+'</div></div><span style="font-size:11px;font-weight:500;color:var(--red)">'+(r.price*r.qty).toLocaleString()+' ر</span></div>'});
+  document.getElementById('warranty-parts-kpi').innerHTML=wH;
+  var now2=new Date();now2.setDate(1);var months=[];for(var i=5;i>=0;i--){var dd=new Date(now2.getFullYear(),now2.getMonth()-i,1);months.push(dd)}
+  var tC={ppm:0,'ppm-kit':0,corrective:0,emergency:0};
+  var mC=months.map(function(m){var cnt=visitLog.filter(function(v){var vd=new Date(v.date);return vd.getFullYear()===m.getFullYear()&&vd.getMonth()===m.getMonth()});cnt.forEach(function(v){if(tC[v.type]!==undefined)tC[v.type]++});return{label:fmtMonth(m),count:cnt.length}});
+  var maxC=Math.max.apply(null,mC.map(function(m){return m.count||1}));
+  var vH='<div style="margin-bottom:8px">';
+  mC.forEach(function(m){var w=Math.round((m.count/maxC)*100);vH+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:10px;color:var(--text2);min-width:65px;text-align:right">'+m.label+'</span><div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:var(--blue);width:'+w+'%"></div></div><span style="font-size:11px;font-weight:500;min-width:16px;text-align:left">'+m.count+'</span></div>'});
+  vH+='</div><div style="border-top:0.5px solid var(--border);padding-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:3px">';
+  var tMap={ppm:['وقائية','var(--blue)'],'ppm-kit':['PPM+Kit','var(--purple)'],corrective:['تصحيحية','var(--amber)'],emergency:['طارئة','var(--red)']};
+  Object.keys(tMap).forEach(function(k){vH+='<div style="display:flex;align-items:center;gap:3px;font-size:10px"><div style="width:7px;height:7px;border-radius:1px;background:'+tMap[k][1]+'"></div><span style="color:var(--text2)">'+tMap[k][0]+':</span><span style="font-weight:500">'+tC[k]+'</span></div>'});
+  document.getElementById('visits-chart').innerHTML=vH+'</div>';
+  var totalVal=contracts.reduce(function(s,c){return s+(c.value||0)},0);
+  var allConPR=partRequests.filter(function(r){return r.coverage==='contract'&&r.status==='done'});
+  var totalPC=allConPR.reduce(function(s,r){return s+r.price*r.qty},0);
+  var totalM=totalVal-totalPC,mPct=totalVal>0?Math.round((totalPC/totalVal)*100):0;
+  document.getElementById('contract-prof-kpi').innerHTML='<div class="kpi-box"><div class="kpi-num" style="color:var(--blue)">'+totalVal.toLocaleString()+'</div><div class="kpi-lbl">إجمالي قيمة العقود (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--red)">'+totalPC.toLocaleString()+'</div><div class="kpi-lbl">تكلفة قطع الغيار (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:'+(totalM>=0?'var(--green)':'var(--red)')+'">'+totalM.toLocaleString()+'</div><div class="kpi-lbl">إجمالي الهامش (ريال)</div></div><div class="kpi-box"><div class="kpi-num" style="color:'+(mPct>70?'var(--red)':mPct>45?'var(--amber)':'var(--green)')+'">'+mPct+'%</div><div class="kpi-lbl">نسبة تكلفة القطع</div></div>';
+  var pH='';
+  contracts.forEach(function(c){
+    var cPRs=partRequests.filter(function(r){return r.contractId===c.id&&r.status==='done'});
+    var cost=cPRs.reduce(function(s,r){return s+r.price*r.qty},0);
+    var margin=(c.value||0)-cost,ratio=(c.value||0)>0?Math.round((cost/(c.value||1))*100):0;
+    var isL=ratio>85,isB=ratio>60&&ratio<=85;
+    var cc=isL?'loss':(isB?'brk':'profit'),bc=isL?'var(--red)':(isB?'var(--amber)':'var(--green)');
+    var dL=daysDiff(c.end),sLbl=dL<0?'<span class="badge b-red">منتهي</span>':(dL<60?'<span class="badge b-amber">ينتهي قريباً</span>':'<span class="badge b-green">ساري</span>');
+    var vC=isL?'v-loss':(isB?'v-brk':'v-profit'),vM=isL?'العقد خسران — القطع '+ratio+'% من قيمة العقد':(isB?'هامش ضعيف — '+ratio+'% — راجع التسعير':'العقد رابح — هامش '+(100-ratio)+'%');
+    pH+='<div class="con-card '+cc+'"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-weight:500;font-size:12px;margin-bottom:4px">'+c.client+'</div><div style="display:flex;gap:4px;flex-wrap:wrap">'+ctBadge(c.type)+'&nbsp;'+sLbl+'</div></div><div style="text-align:left"><div style="font-size:18px;font-weight:600;color:'+bc+'">'+ratio+'%</div><div style="font-size:10px;color:var(--text2)">من قيمة العقد</div></div></div>';
+    pH+='<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text2);margin-bottom:2px"><span>تكلفة قطع الغيار</span><span style="font-weight:500;color:var(--text)">'+cost.toLocaleString()+' / '+(c.value||0).toLocaleString()+' ريال</span></div>';
+    pH+='<div class="prog-wrap"><div class="prog-bar" style="width:'+Math.min(100,ratio)+'%;background:'+bc+'"></div></div>';
+    pH+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px"><div class="kpi-box"><div class="kpi-num" style="color:var(--blue);font-size:13px">'+(c.value||0).toLocaleString()+'</div><div class="kpi-lbl">قيمة العقد</div></div><div class="kpi-box"><div class="kpi-num" style="color:var(--red);font-size:13px">'+cost.toLocaleString()+'</div><div class="kpi-lbl">تكلفة القطع</div></div><div class="kpi-box"><div class="kpi-num" style="color:'+(margin>=0?'var(--green)':'var(--red)')+';font-size:13px">'+margin.toLocaleString()+'</div><div class="kpi-lbl">الهامش</div></div></div>';
+    if(cPRs.length){pH+='<div style="margin-top:9px;border-top:0.5px solid var(--border);padding-top:7px"><div style="font-size:10px;font-weight:500;color:var(--text2);margin-bottom:5px">القطع المستخدمة</div>';cPRs.forEach(function(r){var p=parts.find(function(x){return x.id===r.partId});pH+='<div class="parts-list-row"><span>'+(p?p.name:'—')+' ×'+r.qty+'</span><span style="font-weight:500;color:var(--red)">'+(r.price*r.qty).toLocaleString()+' ر</span></div>'});pH+='</div>';}
+    pH+='<div class="verdict '+vC+'">'+vM+'</div></div>';
+  });
+  document.getElementById('contract-prof-list').innerHTML=pH||'<div class="empty-dash">لا توجد عقود</div>';
+  var sD=[].concat(devices).sort(function(a,b){return daysDiff(ppmSt(a).next)-daysDiff(ppmSt(b).next)});
+  document.getElementById('dash-ppm').innerHTML=sD.slice(0,5).map(function(d){var s=ppmSt(d);return'<div class="dash-row"><div class="ppm-dot '+s.cls+'"></div><div class="dash-row-info"><div class="dash-row-title">'+d.name+'</div><div class="dash-row-sub">'+d.client+' · '+fmtDate(s.next)+'</div></div><span class="badge '+s.bc+'">'+s.lbl+'</span></div>'}).join('')||'<div class="empty-dash">لا توجد أجهزة</div>';
+  var expC=[].concat(contracts).filter(function(c){return daysDiff(c.end)<=90}).sort(function(a,b){return daysDiff(a.end)-daysDiff(b.end)});
+  document.getElementById('dash-contracts-exp').innerHTML=expC.length?expC.map(function(c){var diff=daysDiff(c.end);var bc=diff<0?'b-red':(diff<=30?'b-red':'b-amber');var lbl=diff<0?'منتهي منذ '+Math.abs(diff)+' ي':'ينتهي بعد '+diff+' ي';return'<div class="dash-row"><div class="dash-row-info"><div class="dash-row-title">'+c.client+'</div><div class="dash-row-sub">'+fmtDate(c.start)+' ← '+fmtDate(c.end)+'</div></div>'+ctBadge(c.type)+'&nbsp;<span class="badge '+bc+'">'+lbl+'</span></div>'}).join(''):'<div class="empty-dash">لا توجد عقود تنتهي قريباً</div>';
+  var pend=partRequests.filter(function(r){return r.status==='pending'});
+  document.getElementById('dash-part-reqs').innerHTML=pend.length?pend.map(function(pr){var p=parts.find(function(x){return x.id===pr.partId}),dev=devices.find(function(x){return x.id===pr.deviceId});var cL={'warranty':'ضمان','contract':'عقد','purchase':'شراء'};var cB={'warranty':'b-green','contract':'b-blue','purchase':'b-amber'};return'<div class="dash-row"><div class="dash-row-info"><div class="dash-row-title">'+(p?p.name:'—')+' ×'+pr.qty+'</div><div class="dash-row-sub">'+(dev?dev.name:'—')+'</div></div><span class="badge '+cB[pr.coverage]+'">'+cL[pr.coverage]+'</span> <button class="btn btn-sm" onclick="closePR(\''+pr.id+'\')">تم</button></div>'}).join(''):'<div class="empty-dash">لا توجد طلبات معلقة</div>';
+  var lowP=parts.filter(function(p){var k=getPS(p).key;return k==='reorder'||k==='empty'||k==='not_ordered'}).sort(function(a,b){return a.qty-b.qty});
+  document.getElementById('dash-low-parts').innerHTML=lowP.length?lowP.map(function(p){var pct=p.max>0?Math.round((p.qty/p.max)*100):0;var st=getPS(p);return'<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border)"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500">'+p.name+'</div><div style="font-size:10px;color:var(--text2)">'+p.num+'</div><div style="margin-top:3px;display:flex;align-items:center;gap:6px"><div style="flex:1;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden"><div style="height:100%;border-radius:3px;background:'+(p.qty===0?'var(--red)':'var(--amber)')+';width:'+Math.min(100,pct)+'%"></div></div><span style="font-size:11px;font-weight:500;color:'+(p.qty===0?'var(--red)':'var(--amber)')+'">'+p.qty+'/'+p.min+'</span></div></div><button class="btn btn-sm" onclick="openModal(\'m-part-req\')">طلب</button></div>'}).join(''):'<div class="empty-dash">جميع قطع الغيار بمستوى كافٍ</div>';
+  document.getElementById('dash-req').innerHTML=[].concat(requests).slice(-5).reverse().map(function(r){var dev=devices.find(function(d){return d.id===r.deviceId});return'<tr onclick="openReqDetail(\''+r.id+'\')" style="cursor:pointer"><td>'+r.id+'</td><td>'+(dev?dev.name:'—')+'</td><td>'+(r.desc&&r.desc.length>28?r.desc.slice(0,28)+'...':r.desc||'')+'</td><td>'+pBadge(r.priority)+'</td><td>'+sBadge(r.status)+'</td></tr>'}).join('');
+}
+function closePR(id){var pr=partRequests.find(function(x){return x.id===id});if(pr){pr.status='done';savePartReqs();renderDashboard()}}
+
+// ===== DEVICES =====
+function renderDevices(){var tb=document.getElementById('dev-table');if(!devices.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">لا توجد أجهزة</td></tr>';return}tb.innerHTML=devices.map(function(d){var s=ppmSt(d);return'<tr><td style="font-weight:500">'+d.name+'<br><span style="font-size:10px;color:var(--text2)">'+d.model+'</span></td><td>'+d.client+'</td><td>'+fmtDate(d.date)+'</td><td>'+(d.cycle===6?'نصف سنوي':'سنوي')+'</td><td>'+(d.tech||'—')+'</td><td><span class="badge '+s.bc+'">'+s.lbl+'</span></td><td><button class="btn btn-sm btn-danger" onclick="delDevice('+d.id+')">حذف</button></td></tr>'}).join('')}
+function addDevice(){var name=document.getElementById('d-name').value.trim(),client=document.getElementById('d-client').value.trim(),date=document.getElementById('d-date').value;if(!name||!client||!date){alert('يرجى ملء الحقول المطلوبة');return}var dev={id:nextDevId++,name:name,client:client,date:date,model:document.getElementById('d-model').value,serial:document.getElementById('d-serial').value,cycle:parseInt(document.getElementById('d-cycle').value),tech:document.getElementById('d-tech').value,type:document.getElementById('d-type').value,lastPPM:date,warrantyMonths:12};devices.push(dev);saveDevices();var al=document.getElementById('install-alert');al.className='alert alert-success';al.style.display='block';al.textContent='تم تسجيل "'+name+'" وجدولة الزيارة الأولى في '+fmtDate(addMonths(date,dev.cycle));closeModal('m-install');['d-name','d-model','d-serial','d-client','d-date','d-tech'].forEach(function(id){document.getElementById(id).value=''});renderDevices();renderDashboard()}
+function delDevice(id){if(!confirm('حذف هذا الجهاز؟'))return;devices=devices.filter(function(d){return d.id!==id});saveDevices();renderDevices();renderDashboard()}
+
+// ===== CONTRACTS =====
+function renderContracts(){var el=document.getElementById('contracts-list');if(!contracts.length){el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text2)">لا توجد عقود</div>';return}el.innerHTML=contracts.map(function(c){var devNames=(c.deviceIds||[]).map(function(id){var d=devices.find(function(x){return x.id===parseInt(id)});return d?d.name:'—'}).join('، ');var dL=daysDiff(c.end),sBc=dL<0?'b-red':(dL<60?'b-amber':'b-green'),sLbl=dL<0?'منتهي':(dL<60?'ينتهي قريباً':'ساري');var cPRs=partRequests.filter(function(r){return r.contractId===c.id&&r.status==='done'});var cost=cPRs.reduce(function(s,r){return s+r.price*r.qty},0);var margin=(c.value||0)-cost,ratio=(c.value||0)>0?Math.round((cost/(c.value||1))*100):0;var mColor=ratio>85?'var(--red)':(ratio>60?'var(--amber)':'var(--green)');return'<div class="contract-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px"><div><div style="font-weight:500;font-size:13px">'+c.client+'</div><div style="margin-top:4px">'+ctBadge(c.type)+'&nbsp;<span class="badge '+sBc+'">'+sLbl+'</span></div></div><div style="text-align:left"><div style="font-size:12px;color:var(--text2)">'+(c.value||0).toLocaleString()+' ريال</div><div style="font-size:11px;color:'+mColor+'">هامش: '+margin.toLocaleString()+' ر ('+ratio+'%)</div></div></div><div class="info-row">بداية: <span class="info-val">'+fmtDate(c.start)+'</span>&nbsp;انتهاء: <span class="info-val">'+fmtDate(c.end)+'</span></div><div class="info-row">الأجهزة: <span class="info-val">'+devNames+'</span></div>'+(c.notes?'<div class="info-row">ملاحظات: <span class="info-val">'+c.notes+'</span></div>':'')+'<div style="margin-top:10px"><button class="btn btn-sm btn-danger" onclick="delContract('+c.id+')">حذف</button></div></div>'}).join('')}
+function addContract(){var client=document.getElementById('c-client').value.trim(),start=document.getElementById('c-start').value,end=document.getElementById('c-end').value;if(!client||!start||!end){alert('يرجى ملء الحقول المطلوبة');return}var devIds=[].slice.call(document.getElementById('c-devices').selectedOptions).map(function(o){return parseInt(o.value)});var con={id:nextConId++,client:client,type:document.getElementById('c-type').value,start:start,end:end,cycle:parseInt(document.getElementById('c-cycle').value),value:parseFloat(document.getElementById('c-value').value)||0,deviceIds:devIds,notes:document.getElementById('c-notes').value};contracts.push(con);devIds.forEach(function(id){var dev=devices.find(function(d){return d.id===id});if(dev)dev.cycle=con.cycle});saveContracts();saveDevices();closeModal('m-contract');['c-client','c-start','c-end','c-value','c-notes'].forEach(function(id){document.getElementById(id).value=''});renderContracts();renderDashboard()}
+function delContract(id){if(!confirm('حذف هذا العقد؟'))return;contracts=contracts.filter(function(c){return c.id!==id});saveContracts();renderContracts();renderDashboard()}
+
+// ===== PPM =====
+function renderPPM(){var filter=document.getElementById('ppm-filter').value,tb=document.getElementById('ppm-table');var sorted=[].concat(devices).filter(function(d){return filter==='all'||ppmSt(d).cls===filter}).sort(function(a,b){return daysDiff(ppmSt(a).next)-daysDiff(ppmSt(b).next)});if(!sorted.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">لا توجد زيارات</td></tr>';return}tb.innerHTML=sorted.map(function(d){var s=ppmSt(d);var con=getDevCon(d.id);return'<tr><td style="font-weight:500">'+d.name+'</td><td>'+d.client+'</td><td>'+(con?ctBadge(con.type):'<span class="badge b-gray">بلا عقد</span>')+'</td><td>'+fmtDate(d.lastPPM)+'</td><td>'+fmtDate(s.next)+'</td><td><span class="badge '+s.bc+'">'+s.lbl+'</span></td><td><button class="btn btn-sm" onclick="openPPMDone('+d.id+')">تسجيل</button></td></tr>'}).join('')}
+function openPPMDone(id){document.getElementById('ppm-dev-id').value=id;document.getElementById('ppm-date').value=today();openModal('m-ppm-done')}
+function completePPM(){var id=parseInt(document.getElementById('ppm-dev-id').value),dt=document.getElementById('ppm-date').value;if(!dt){alert('يرجى تحديد التاريخ');return}var dev=devices.find(function(d){return d.id===id});if(dev)dev.lastPPM=dt;visitLog.push({deviceId:id,type:document.getElementById('ppm-type').value,date:dt});saveDevices();saveVisitLog();closeModal('m-ppm-done');renderPPM();renderDashboard()}
+
+// ===== REQUESTS =====
+function renderRequests(){var tb=document.getElementById('req-table');var filtered=reqFilter==='all'?requests:requests.filter(function(r){return r.status===reqFilter});if(!filtered.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text2)">لا توجد طلبات</td></tr>';return}tb.innerHTML=[].concat(filtered).reverse().map(function(r){var dev=devices.find(function(d){return d.id===r.deviceId});return'<tr onclick="openReqDetail(\''+r.id+'\')" style="cursor:pointer"><td>'+r.id+'</td><td>'+(dev?dev.name:'—')+'</td><td>'+(r.desc&&r.desc.length>30?r.desc.slice(0,30)+'...':r.desc||'')+'</td><td>'+pBadge(r.priority)+'</td><td>'+sBadge(r.status)+'</td><td></td></tr>'}).join('')}
+function setRF(f,btn){reqFilter=f;document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});if(btn)btn.classList.add('active');renderRequests()}
+function addRequest(){var devId=document.getElementById('r-device').value,desc=document.getElementById('r-desc').value.trim();if(!devId||!desc){alert('يرجى اختيار الجهاز وكتابة وصف العطل');return}var req={id:'REQ-'+String(nextReqId++).padStart(3,'0'),deviceId:parseInt(devId),desc:desc,priority:document.getElementById('r-priority').value,type:document.getElementById('r-type').value,reporter:document.getElementById('r-reporter').value||'غير محدد',assigned:document.getElementById('r-assigned').value||'غير محدد',status:'open',date:today()};requests.push(req);saveRequests();closeModal('m-req');['r-desc','r-reporter','r-assigned'].forEach(function(id){document.getElementById(id).value=''});renderRequests();renderDashboard()}
+function openReqDetail(id){activeReqId=id;var r=requests.find(function(x){return x.id===id});var dev=devices.find(function(d){return d.id===r.deviceId});document.getElementById('rd-title').textContent=r.id+' — '+r.type;document.getElementById('rd-body').innerHTML='<div class="form-grid" style="gap:8px;margin-bottom:10px"><div><div style="font-size:11px;color:var(--text2)">الجهاز</div><div style="font-size:12px;margin-top:2px">'+(dev?dev.name:'—')+'</div></div><div><div style="font-size:11px;color:var(--text2)">الحالة</div><div style="margin-top:2px">'+sBadge(r.status)+'</div></div><div><div style="font-size:11px;color:var(--text2)">الأولوية</div><div style="margin-top:2px">'+pBadge(r.priority)+'</div></div><div><div style="font-size:11px;color:var(--text2)">التاريخ</div><div style="font-size:12px;margin-top:2px">'+fmtDate(r.date)+'</div></div><div class="form-full"><div style="font-size:11px;color:var(--text2)">الوصف</div><div style="font-size:12px;margin-top:2px;line-height:1.6">'+r.desc+'</div></div><div><div style="font-size:11px;color:var(--text2)">المُبلِّغ</div><div style="font-size:12px;margin-top:2px">'+r.reporter+'</div></div><div><div style="font-size:11px;color:var(--text2)">الفني</div><div style="font-size:12px;margin-top:2px">'+r.assigned+'</div></div></div>';document.getElementById('rd-inp').style.display=r.status==='open'?'':'none';document.getElementById('rd-done').style.display=r.status==='done'?'none':'';openModal('m-req-detail')}
+function updReq(status){var r=requests.find(function(x){return x.id===activeReqId});if(r)r.status=status;saveRequests();closeModal('m-req-detail');renderRequests();renderDashboard()}
+
+// ===== INVENTORY =====
+function switchInvTab(id,btn){document.querySelectorAll('.inv-section').forEach(function(s){s.classList.add('hidden')});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});document.getElementById('inv-'+id).classList.remove('hidden');if(btn)btn.classList.add('active');var fns={inventory:renderInventory,orders:renderOrders,consumption:renderConsumption,log:renderLog};if(fns[id])fns[id]()}
+function renderInventory(){var q=(document.getElementById('search-inv').value||'').toLowerCase();var filtered=parts.filter(function(p){if(q&&!(p.name+p.num+p.supplier).toLowerCase().includes(q))return false;if(invFilter==='all')return true;return getPS(p).key===invFilter});var counts={ok:0,reorder:0,empty:0,ordered:0,not_ordered:0,full:0};parts.forEach(function(p){var k=getPS(p).key;counts[k]=(counts[k]||0)+1});var nO=parts.filter(function(p){var k=getPS(p).key;return k==='reorder'||k==='empty'||k==='not_ordered'}).length;document.getElementById('order-badge').textContent=nO||'';var defs=[{key:'all',label:'الكل',num:parts.length,cl:'var(--blue)'},{key:'ok',label:'متوفر',num:counts.ok,cl:'var(--green)'},{key:'full',label:'ممتلئ',num:counts.full,cl:'var(--blue)'},{key:'ordered',label:'تم طلبها',num:counts.ordered,cl:'var(--purple)'},{key:'reorder',label:'اطلب الآن',num:counts.reorder,cl:'var(--amber)'},{key:'empty',label:'نفدت',num:counts.empty,cl:'var(--red)'}];document.getElementById('inv-stats').innerHTML=defs.map(function(s){return'<div class="inv-stat'+(invFilter===s.key?' active-filter':'')+'" onclick="setInvFilter(\''+s.key+'\')" style="cursor:pointer"><div style="font-size:16px;font-weight:600;color:'+s.cl+'">'+s.num+'</div><div style="font-size:10px;color:var(--text2);margin-top:2px">'+s.label+'</div></div>'}).join('');var last=updateLog[0];document.getElementById('last-banner').innerHTML=last?'<div class="alert alert-info" style="margin-bottom:10px">آخر تحديث: <strong>'+last.date+'</strong> | '+last.file+'</div>':'<div class="alert alert-amber" style="margin-bottom:10px">لم يتم تحديث المخزون بعد</div>';document.getElementById('inv-table').innerHTML=filtered.length?filtered.map(function(p){var st=getPS(p);var maxV=p.max||1;var fp=Math.min(100,Math.round((p.qty/maxV)*100));var mp=Math.min(100,Math.round((p.min/maxV)*100));var bc=p.qty===0?'var(--red)':(p.qty<=p.min?'var(--amber)':'var(--green)');var opts='<option value="">تلقائي</option><option value="ordered"'+(p.manualStatus==='ordered'?' selected':'')+'>تم طلبها</option><option value="not_ordered"'+(p.manualStatus==='not_ordered'?' selected':'')+'>لم تُطلب بعد</option>';return'<tr><td style="font-family:monospace;font-size:11px">'+p.num+'</td><td style="font-weight:500">'+p.name+'<br><span style="font-size:10px;color:var(--text2)">'+p.compat+'</span></td><td style="font-size:11px;color:var(--text2)">'+p.supplier+'</td><td style="text-align:center;font-weight:600;color:'+st.color+'">'+p.qty+'</td><td><div style="display:flex;align-items:center;gap:4px"><span style="font-size:10px;color:var(--text2);min-width:18px">'+p.min+'</span><div class="bar-wrap" style="flex:1"><div class="bar-fill" style="width:'+fp+'%;background:'+bc+'"></div><div class="bar-min-m" style="right:'+(100-mp)+'%"></div><div class="bar-max-m" style="right:0"></div></div><span style="font-size:10px;color:var(--text2);min-width:18px">'+p.max+'</span></div>'+(p.qty<=p.min&&!p.manualStatus?'<div style="font-size:10px;color:var(--amber);margin-top:2px">اطلب '+orderQty(p)+' قطعة</div>':'')+'</td><td><select class="status-sel" style="border-color:'+st.color+';color:'+st.color+'" onchange="changePS('+p.id+',this.value)">'+opts+'</select></td><td><button class="btn btn-sm" onclick="openEditPart('+p.id+')">تعديل</button></td></tr>'}).join(''):'<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text2)">لا توجد قطع</td></tr>'}
+function setInvFilter(k){invFilter=k;renderInventory()}
+function changePS(id,val){var p=parts.find(function(x){return x.id===id});if(p){p.manualStatus=val;saveParts();renderInventory();renderOrders()}}
+function renderOrders(){var need=parts.filter(function(p){var k=getPS(p).key;return k==='reorder'||k==='empty'||k==='not_ordered'}).sort(function(a,b){return a.qty-b.qty});document.getElementById('orders-list').innerHTML=need.length?need.map(function(p){var st=getPS(p);var oq=orderQty(p);return'<div class="order-card '+(st.key==='empty'?'urgent':'warn')+'"><div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">'+p.name+'</div><div style="font-size:11px;color:var(--text2);margin-top:2px">'+p.num+' | '+p.supplier+'</div><div style="margin-top:6px;display:flex;gap:8px;font-size:11px;flex-wrap:wrap"><span style="color:var(--text2)">الكمية: <strong style="color:'+st.color+'">'+p.qty+'</strong></span><span style="color:var(--text2)">Min: <strong>'+p.min+'</strong></span><span style="color:var(--text2)">Max: <strong>'+p.max+'</strong></span>'+(p.price&&oq?'<span style="color:var(--text2)">التكلفة: <strong>'+(oq*p.price).toLocaleString()+' ريال</strong></span>':'')+'</div><div style="margin-top:6px"><span class="badge '+st.bc+'">'+st.lbl+'</span></div></div><div style="text-align:center;min-width:65px"><div style="font-size:22px;font-weight:600;color:'+st.color+'">'+oq+'</div><div style="font-size:10px;color:var(--text2)">قطعة مطلوبة</div></div></div>'}).join(''):'<div style="text-align:center;padding:28px;color:var(--text2)">كل قطع الغيار فوق حد الـ Min</div>'}
+function exportOrders(){var need=parts.filter(function(p){var k=getPS(p).key;return k==='reorder'||k==='empty'||k==='not_ordered'});if(!need.length){alert('لا توجد قطع تحتاج طلب');return}var lines=['\uFEFFرقم القطعة\tاسم القطعة\tالمورد\tالكمية الحالية\tMin\tMax\tالكمية المطلوبة\tالتكلفة\tالحالة'];need.forEach(function(p){var st=getPS(p);lines.push([p.num,p.name,p.supplier,p.qty,p.min,p.max,orderQty(p),(orderQty(p)*p.price).toLocaleString()+' ريال',st.lbl].join('\t'))});var blob=new Blob([lines.join('\n')],{type:'text/plain;charset=utf-8'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='قائمة-الطلبيات.txt';a.click()}
+function openAddPart(){editPartId=null;document.getElementById('m-edit-part-title').textContent='إضافة قطعة غيار';['ep-num','ep-name','ep-supplier','ep-compat'].forEach(function(id){document.getElementById(id).value=''});document.getElementById('ep-price').value=0;document.getElementById('ep-qty').value=0;document.getElementById('ep-min').value=2;document.getElementById('ep-max').value=6;document.getElementById('ep-status').value='';document.getElementById('part-hint').style.display='none';document.getElementById('m-edit-part').classList.add('open')}
+function openEditPart(id){editPartId=id;var p=parts.find(function(x){return x.id===id});if(!p)return;document.getElementById('m-edit-part-title').textContent='تعديل — '+p.name;document.getElementById('ep-num').value=p.num||'';document.getElementById('ep-name').value=p.name||'';document.getElementById('ep-supplier').value=p.supplier||'';document.getElementById('ep-price').value=p.price||0;document.getElementById('ep-qty').value=p.qty||0;document.getElementById('ep-min').value=p.min||0;document.getElementById('ep-max').value=p.max||6;document.getElementById('ep-compat').value=p.compat||'';document.getElementById('ep-status').value=p.manualStatus||'';updatePartHint();document.getElementById('m-edit-part').classList.add('open')}
+function updatePartHint(){var qty=parseInt(document.getElementById('ep-qty').value)||0,min=parseInt(document.getElementById('ep-min').value)||0,max=parseInt(document.getElementById('ep-max').value)||0;var h=document.getElementById('part-hint');if(max>0&&min>=max){h.style.display='block';h.textContent='تحذير: Max يجب أن يكون أكبر من Min';return}if(qty<=min&&max>0){h.style.display='block';h.textContent='الكمية ('+qty+') عند أو دون الـ Min — الطلب المقترح: '+(max-qty)+' قطعة'}else{h.style.display='none'}}
+function savePart(){var name=document.getElementById('ep-name').value.trim();if(!name){alert('يرجى إدخال اسم القطعة');return}var min=parseInt(document.getElementById('ep-min').value)||0,max=parseInt(document.getElementById('ep-max').value)||0;if(max>0&&min>=max){alert('Max يجب أن يكون أكبر من Min');return}var data={num:document.getElementById('ep-num').value,name:name,supplier:document.getElementById('ep-supplier').value,price:parseFloat(document.getElementById('ep-price').value)||0,qty:parseInt(document.getElementById('ep-qty').value)||0,min:min,max:max,compat:document.getElementById('ep-compat').value,manualStatus:document.getElementById('ep-status').value};if(editPartId){var p=parts.find(function(x){return x.id===editPartId});if(p)Object.assign(p,data)}else{data.id=Date.now();parts.push(data)}saveParts();closeModal('m-edit-part');renderInventory();renderOrders()}
+function renderConsumption(){var devF=document.getElementById('cf-device').value,covF=document.getElementById('cf-cov').value;var sel=document.getElementById('cf-device');if(sel.options.length===1){devices.forEach(function(d){var o=document.createElement('option');o.value=d.id;o.textContent=d.name;sel.appendChild(o)})}var done=partRequests.filter(function(r){return r.status==='done'});if(devF)done=done.filter(function(r){return r.deviceId==devF});if(covF)done=done.filter(function(r){return r.coverage===covF});var byD={},byP={};done.forEach(function(r){var dev=devices.find(function(d){return d.id===r.deviceId}),p=parts.find(function(x){return x.id===r.partId});var dn=dev?dev.name:'—',pn=p?p.name:'—';byD[dn]=(byD[dn]||0)+r.price*r.qty;byP[pn]=(byP[pn]||0)+r.qty});var dH='<div style="border:0.5px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">التكلفة بالجهاز</div>';Object.keys(byD).forEach(function(k){dH+='<div class="con-row"><span style="flex:1">'+k+'</span><span style="font-weight:500">'+byD[k].toLocaleString()+' ريال</span></div>'});var pH='</div><div style="border:0.5px solid var(--border);border-radius:8px;padding:12px"><div style="font-size:11px;font-weight:500;color:var(--text2);margin-bottom:8px">الاستهلاك بالقطعة</div>';Object.keys(byP).forEach(function(k){pH+='<div class="con-row"><span style="flex:1">'+k+'</span><span style="font-weight:500">'+byP[k]+' قطعة</span></div>'});document.getElementById('con-summary').innerHTML=dH+pH+'</div>';var covLbl={warranty:'ضمان البيع',contract:'ضمان عقد',purchase:'شراء مباشر'};var covBc={warranty:'b-green',contract:'b-blue',purchase:'b-amber'};document.getElementById('consumption-table').innerHTML=done.map(function(r){var p=parts.find(function(x){return x.id===r.partId}),dev=devices.find(function(d){return d.id===r.deviceId});return'<tr><td style="font-weight:500">'+(p?p.name:'—')+'</td><td style="font-size:11px">'+(dev?dev.name:'—')+'</td><td style="text-align:center;font-weight:500">'+r.qty+'</td><td><span class="badge '+covBc[r.coverage]+'">'+covLbl[r.coverage]+'</span></td><td style="font-weight:500">'+(r.price*r.qty).toLocaleString()+' ريال</td><td style="font-size:11px;color:var(--text2)">'+fmtDate(r.date)+'</td></tr>'}).join('')||'<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text2)">لا توجد بيانات</td></tr>'}
+function renderLog(){document.getElementById('update-log').innerHTML=updateLog.length?updateLog.map(function(l){return'<div class="con-row" style="padding:9px 12px"><span style="font-size:11px;color:var(--text2);min-width:140px">'+l.date+'</span><span style="flex:1;font-weight:500;font-size:12px">'+l.file+'</span><span class="badge b-green" style="margin-left:5px">+'+l.added+'</span><span class="badge b-blue" style="margin-right:5px">'+l.updated+' تحديث</span></div>'}).join(''):'<div style="text-align:center;padding:24px;color:var(--text2)">لا توجد عمليات تحديث</div>'}
+
+function updateCovFields(){var cov=document.getElementById('pr-cov').value;['pr-warranty-info','pr-contract-info','pr-purchase-section'].forEach(function(id){document.getElementById(id).classList.remove('show')});if(cov==='warranty'){document.getElementById('pr-warranty-info').classList.add('show');updateWarrantyInfo()}else if(cov==='contract'){document.getElementById('pr-contract-info').classList.add('show');updateWarrantyInfo()}else if(cov==='purchase'){document.getElementById('pr-purchase-section').classList.add('show')}}
+function updateWarrantyInfo(){var devId=parseInt(document.getElementById('pr-device').value),cov=document.getElementById('pr-cov').value,dev=devices.find(function(d){return d.id===devId});if(!dev)return;if(cov==='warranty'){var wEnd=warrantyEnd(dev),active=isUnderWarranty(dev);document.getElementById('pr-w-content').innerHTML='<div style="font-weight:500;margin-bottom:5px;color:'+(active?'var(--green)':'var(--red)')+'">'+(active?'الجهاز تحت ضمان البيع':'انتهى ضمان البيع')+'</div><div class="info-row">تاريخ التركيب: <span class="info-val">'+fmtDate(dev.date)+'</span></div><div class="info-row">انتهاء الضمان: <span class="info-val">'+fmtDate(warrantyEnd(dev))+'</span></div>'}else if(cov==='contract'){var con=getDevCon(devId);document.getElementById('pr-c-content').innerHTML=con?'<div style="font-weight:500;margin-bottom:5px">عقد صيانة ساري</div><div class="info-row">نوع: '+ctBadge(con.type)+'</div><div class="info-row">بداية: <span class="info-val">'+fmtDate(con.start)+'</span> انتهاء: <span class="info-val">'+fmtDate(con.end)+'</span></div>':'<div style="color:var(--red);font-size:11px">لا يوجد عقد صيانة ساري</div>'}}
+function submitPartReq(){var partId=document.getElementById('pr-part').value,devId=document.getElementById('pr-device').value,cov=document.getElementById('pr-cov').value;if(!partId||!devId||!cov){alert('يرجى ملء الحقول المطلوبة');return}var part=parts.find(function(p){return p.id==partId}),dev=devices.find(function(d){return d.id==devId});var price=cov==='purchase'?(parseFloat(document.getElementById('pr-price').value)||0):(part?part.price:0);var conId=null;if(cov==='contract'){var c=getDevCon(parseInt(devId));if(c)conId=c.id}var pr={id:'PR-'+String(nextPRId++).padStart(3,'0'),partId:parseInt(partId),deviceId:parseInt(devId),qty:parseInt(document.getElementById('pr-qty').value)||1,coverage:cov,price:price,reason:document.getElementById('pr-reason').value,notes:document.getElementById('pr-notes').value,date:today(),status:'pending',contractId:conId};partRequests.push(pr);savePartReqs();closeModal('m-part-req');alert('تم إرسال الطلب وحفظه في Google Sheets');renderDashboard()}
+
+function handleDrop(e){e.preventDefault();var f=e.dataTransfer.files[0];if(f)handleFile(f)}
+function handleFile(file){if(!file||!window.XLSX)return;var r=new FileReader();r.onload=function(e){var wb=XLSX.read(e.target.result,{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];var data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});if(!data||data.length<2)return;var headers=data[0].map(function(h){return String(h).trim()});parsedRows=data.slice(1).filter(function(r){return r.some(function(c){return c!==''})});var fields=[{key:'num',hints:['part no','رقم القطعة','رقم']},{key:'name',hints:['name','اسم','الاسم']},{key:'qty',hints:['qty','quantity','كمية','الكمية']},{key:'supplier',hints:['supplier','مورد']}];var html='';fields.forEach(function(f){var best='';headers.forEach(function(h,i){if(f.hints.some(function(hint){return h.toLowerCase().includes(hint)}))best=i});html+='<div style="display:flex;align-items:center;gap:7px;background:var(--bg3);border-radius:7px;padding:7px 10px"><span style="font-size:11px;color:var(--text2);min-width:85px">'+f.key+'</span><select id="col-'+f.key+'" style="flex:1;padding:5px 8px;border:0.5px solid var(--border);border-radius:6px;font-size:11px;background:var(--bg2);color:var(--text)"><option value="">--</option>'+headers.map(function(h,i){return'<option value="'+i+'"'+(best===i?' selected':'')+'>'+h+'</option>'}).join('')+'</select></div>'});document.getElementById('col-map-grid').innerHTML=html;document.getElementById('col-mapping').classList.remove('hidden');document.getElementById('import-summary').textContent='إجمالي: '+parsedRows.length+' صف — '+file.name;document.getElementById('import-summary').classList.remove('hidden');document.getElementById('preview-section').classList.remove('hidden');var ph='<table class="tbl" style="font-size:11px"><thead><tr>'+headers.slice(0,4).map(function(h){return'<th>'+h+'</th>'}).join('')+'</tr></thead><tbody>';parsedRows.slice(0,5).forEach(function(r){ph+='<tr>'+headers.slice(0,4).map(function(h,i){return'<td>'+r[i]+'</td>'}).join('')+'</tr>'});document.getElementById('preview-table').innerHTML=ph+'</tbody></table>'};r.readAsArrayBuffer(file)}
+function confirmImport(){var numCol=parseInt(document.getElementById('col-num').value),nameCol=parseInt(document.getElementById('col-name').value),qtyCol=parseInt(document.getElementById('col-qty').value),supCol=document.getElementById('col-supplier').value;if(isNaN(numCol)||isNaN(nameCol)||isNaN(qtyCol)){alert('يرجى تعيين الأعمدة الأساسية');return}var added=0,updated=0;parsedRows.forEach(function(r){var num=String(r[numCol]||'').trim(),name=String(r[nameCol]||'').trim(),qty=parseInt(r[qtyCol])||0,sup=supCol?String(r[parseInt(supCol)]||''):'';if(!num&&!name)return;var ex=parts.find(function(p){return p.num===num});if(ex){ex.qty=qty;if(sup)ex.supplier=sup;if(name)ex.name=name;updated++}else{parts.push({id:Date.now()+Math.random(),num:num,name:name,qty:qty,min:2,max:6,supplier:sup,price:0,compat:'',manualStatus:''});added++}});var now=new Date();var ds=now.toLocaleDateString('ar-SA',{year:'numeric',month:'short',day:'numeric'})+' '+now.toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'});updateLog.unshift({date:ds,file:file?file.name:'excel',added:added,updated:updated,total:parts.length});saveParts();saveUpdateLog();document.getElementById('import-success-msg').textContent='تم التحديث — '+updated+' تعديل و'+added+' إضافة';document.getElementById('col-mapping').classList.add('hidden');document.getElementById('import-success').classList.remove('hidden');renderInventory()}
+function resetUpload(){document.getElementById('col-mapping').classList.add('hidden');document.getElementById('import-success').classList.add('hidden');document.getElementById('preview-section').classList.add('hidden');document.getElementById('file-input').value='';parsedRows=[]}
+</script>
+</body>
+</html>
